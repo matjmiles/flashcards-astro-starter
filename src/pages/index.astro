@@ -24,12 +24,14 @@ import '../styles.css';
         <button id="knew" class="btn good">I knew it</button>
         <button id="missed" class="btn bad">I missed it</button>
         <button id="next" class="btn">Next ➜</button>
+        <button id="reset" class="btn" hidden>Reset Deck</button>
       </div>
 
       <section class="stats">
         <div>Box 1: <span id="b1">0</span></div>
         <div>Box 2: <span id="b2">0</span></div>
         <div>Box 3: <span id="b3">0</span></div>
+        <div>Remaining: <span id="remaining">0</span></div>
         <div>Total: <span id="total">0</span></div>
       </section>
     </main>
@@ -42,6 +44,7 @@ import '../styles.css';
     <script type="module">
       const seenKeyPrefix = 'deck-progress-v1:';
       let cards = [];
+      let activeCards = []; // Cards still being shown in current session
       let i = 0;
       let showingFront = true;
       let progress = {}; // index -> box (1..3)
@@ -71,6 +74,7 @@ import '../styles.css';
         $('b1').textContent = b1;
         $('b2').textContent = b2;
         $('b3').textContent = b3;
+        $('remaining').textContent = activeCards.length;
         $('total').textContent = cards.length;
       }
 
@@ -89,11 +93,13 @@ import '../styles.css';
       async function loadDeck(deckFile) {
         const res = await fetch(`${BASE}decks/${deckFile}`);
         cards = await res.json();
+        activeCards = cards.map((_, index) => index); // Start with all cards active
         i = 0; showingFront = true;
         progress = loadProgress(seenKeyPrefix + deckFile);
         render();
         fillDeckSelect(deckFile);
         updateStats();
+        updateResetButton();
       }
 
       function fillDeckSelect(current) {
@@ -109,36 +115,106 @@ import '../styles.css';
       }
 
       function render() {
-        const c = cards[i];
+        if (activeCards.length === 0) {
+          // All cards completed
+          const front = $('front'), back = $('back');
+          front.src = '';
+          front.alt = 'All cards completed!';
+          back.textContent = 'You have successfully identified all of the slides! Push the reset button to start over.';
+          back.hidden = false;
+          $('flip').disabled = true;
+          $('knew').disabled = true;
+          $('missed').disabled = true;
+          $('next').disabled = true;
+          return;
+        }
+
+        // Ensure i is within bounds of activeCards
+        if (i >= activeCards.length) i = 0;
+        
+        const cardIndex = activeCards[i];
+        const c = cards[cardIndex];
         if (!c) return;
+        
         const front = $('front'), back = $('back');
         front.src = resolvePath(c.image);
         front.alt = c.alt || c.answer || 'Flashcard image';
         back.textContent = c.answer;
         back.hidden = showingFront;
+        
+        // Re-enable buttons
+        $('flip').disabled = false;
+        $('knew').disabled = false;
+        $('missed').disabled = false;
+        $('next').disabled = false;
       }
 
       function setBox(delta) {
-        const val = Math.max(1, Math.min(3, (progress[i]||1) + delta));
-        progress[i] = val;
+        if (activeCards.length === 0) return;
+        
+        const cardIndex = activeCards[i];
+        const val = Math.max(1, Math.min(3, (progress[cardIndex]||1) + delta));
+        progress[cardIndex] = val;
+        
+        // If user got it right (delta > 0), remove from active cards
+        if (delta > 0) {
+          activeCards.splice(i, 1);
+          // Adjust index if we're at the end
+          if (i >= activeCards.length && activeCards.length > 0) {
+            i = 0;
+          }
+        }
+        
         updateStats();
+        updateResetButton();
         saveProgress(seenKeyPrefix + $('deckSelect').value, progress);
+        
+        // Check if we completed all cards and render accordingly
+        if (activeCards.length === 0) {
+          render(); // This will show the completion message
+        }
       }
 
       $('flip').onclick = () => { showingFront = !showingFront; render(); };
-      $('knew').onclick = () => { setBox(+1); next(); };
+      $('knew').onclick = () => { 
+        setBox(+1); 
+        if (activeCards.length > 0) {
+          next(); 
+        }
+      };
       $('missed').onclick = () => { setBox(-2); next(); };
       $('next').onclick = () => next();
+      $('reset').onclick = () => resetDeck();
       $('card').onclick = () => { showingFront = !showingFront; render(); };
       $('card').onkeydown = (e) => {
         if (['Enter',' '].includes(e.key)) { e.preventDefault(); $('flip').click(); }
         if (e.key === 'ArrowRight') $('next').click();
         if (e.key === 'ArrowUp') $('knew').click();
         if (e.key === 'ArrowDown') $('missed').click();
+        if (e.key === 'r' || e.key === 'R') $('reset').click();
       };
 
+      function updateResetButton() {
+        const resetBtn = $('reset');
+        if (activeCards.length === 0 || activeCards.length < cards.length) {
+          resetBtn.hidden = false;
+        } else {
+          resetBtn.hidden = true;
+        }
+      }
+
+      function resetDeck() {
+        activeCards = cards.map((_, index) => index); // Restore all cards
+        i = 0;
+        showingFront = true;
+        render();
+        updateStats();
+        updateResetButton();
+      }
+
       function next() {
-        i = (i + 1) % cards.length;
+        if (activeCards.length === 0) return;
+        i = (i + 1) % activeCards.length;
         showingFront = true;
         render();
       }

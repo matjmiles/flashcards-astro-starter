@@ -1,0 +1,14 @@
+[
+  {
+    "image": "/images/temporal_bone_medial.png",
+    "answer": "Temporal bone",
+    "alt": "Temporal bone (lateral view)",
+    "deck": "Bones"
+  },
+  {
+    "image": "/images/ulna.jpg",
+    "answer": "Olecranon process",
+    "alt": "Olecranon process of the ulna",
+    "deck": "Bones"
+  }
+]
