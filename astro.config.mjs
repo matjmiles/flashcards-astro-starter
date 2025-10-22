@@ -7,6 +7,6 @@ export default defineConfig({
   vite: {
     server: { fs: { strict: false } },
   },
-  site: 'https://YOUR_USERNAME.github.io',
+  site: 'https://matjmiles.github.io',
   base: '/flashcards-astro-starter',
 });
