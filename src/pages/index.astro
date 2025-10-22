@@ -74,8 +74,20 @@ import '../styles.css';
         $('total').textContent = cards.length;
       }
 
+      const BASE = import.meta.env.BASE_URL || '/';
+
+      function resolvePath(p) {
+        if (!p) return p;
+        // If already includes the base, return as-is
+        if (p.startsWith(BASE)) return p;
+        // Absolute paths like '/images/..' should be prefixed with BASE (remove trailing slash on BASE)
+        if (p.startsWith('/')) return BASE.replace(/\/$/, '') + p;
+        // Relative paths are returned unchanged
+        return p;
+      }
+
       async function loadDeck(deckFile) {
-        const res = await fetch('/flashcards-astro-starter/decks/' + deckFile);
+        const res = await fetch(`${BASE}decks/${deckFile}`);
         cards = await res.json();
         i = 0; showingFront = true;
         progress = loadProgress(seenKeyPrefix + deckFile);
@@ -100,7 +112,7 @@ import '../styles.css';
         const c = cards[i];
         if (!c) return;
         const front = $('front'), back = $('back');
-        front.src = c.image;
+        front.src = resolvePath(c.image);
         front.alt = c.alt || c.answer || 'Flashcard image';
         back.textContent = c.answer;
         back.hidden = showingFront;
