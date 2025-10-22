@@ -1,0 +1,21 @@
+{
+  "name": "flashcards-astro-starter",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "node scripts/build-decks.mjs && astro build",
+    "preview": "astro preview",
+    "format": "prettier --write ."
+  },
+  "dependencies": {
+    "astro": "^4.15.0",
+    "@vite-pwa/astro": "^1.1.1",
+    "papaparse": "^5.4.1"
+  },
+  "devDependencies": {
+    "prettier": "^3.3.3",
+    "typescript": "^5.6.2"
+  }
+}
