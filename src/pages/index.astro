@@ -35,7 +35,7 @@ import '../styles.css';
     </main>
 
     <footer class="footer">
-      <a href="/decks/anatomy-bones.json" target="_blank" rel="noopener">View deck JSON</a>
+      <a href="/flashcards-astro-starter/decks/anatomy-bones.json" target="_blank" rel="noopener">View deck JSON</a>
       <span>· Offline-ready PWA</span>
     </footer>
 
@@ -75,7 +75,7 @@ import '../styles.css';
       }
 
       async function loadDeck(deckFile) {
-        const res = await fetch('/decks/' + deckFile);
+        const res = await fetch('/flashcards-astro-starter/decks/' + deckFile);
         cards = await res.json();
         i = 0; showingFront = true;
         progress = loadProgress(seenKeyPrefix + deckFile);
